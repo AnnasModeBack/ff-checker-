@@ -13,15 +13,23 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Normalize Project Directory Structure
+      - name: Extract ZIP & Normalize Directory
         run: |
+          # Ekstrak otomatis jika proyek di-upload dalam bentuk file .zip di root
+          ZIP_FILE=$(find . -maxdepth 1 -name "*.zip" | head -n 1)
+          if [ -n "$ZIP_FILE" ]; then
+            echo "Mengekstrak arsip: $ZIP_FILE"
+            unzip -o "$ZIP_FILE"
+          fi
+
+          # Pindahkan isi subfolder ke root jika terbungkus folder
           if [ ! -f "settings.gradle" ]; then
             FOUND_DIR=$(find . -maxdepth 3 -name "settings.gradle" -printf "%h\n" | head -n 1)
             if [ -n "$FOUND_DIR" ] && [ "$FOUND_DIR" != "." ]; then
-              echo "Memindahkan isi $FOUND_DIR ke root repositori..."
+              echo "Memindahkan proyek dari $FOUND_DIR ke root..."
               cp -r "$FOUND_DIR"/. .
             else
-              echo "ERROR: File settings.gradle tidak ditemukan di repositori! Pastikan seluruh file proyek sudah di-upload."
+              echo "ERROR: file settings.gradle tidak ditemukan di dalam ZIP!"
               ls -la
               exit 1
             fi
