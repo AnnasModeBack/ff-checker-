@@ -1,0 +1,33 @@
+name: Build Annas Tools APK
+on:
+  push: { branches: [main, master] }
+  workflow_dispatch:
+permissions: { contents: write }
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v3
+        with: { gradle-version: '8.4' }
+      - name: Siapkan ikon dari asset/icon.jpg
+        run: sudo apt-get install -y imagemagick >/dev/null && bash scripts/make-icons.sh
+      - name: Buat keystore penandatangan
+        run: keytool -genkeypair -v -keystore annas.jks -alias annas -keyalg RSA -keysize 2048 -validity 10000 -storepass annastools -keypass annastools -dname "CN=Annas Tools, O=Annas, C=ID"
+      - name: Build release
+        run: gradle assembleRelease --no-daemon
+        env: { KS_FILE: '${{ github.workspace }}/annas.jks', KS_PASS: annastools }
+      - name: Ganti nama dan zip
+        run: |
+          mkdir out
+          cp app/build/outputs/apk/release/app-release.apk out/Annas-Tools-Universal.apk
+          cd out && zip Annas-Tools-APK.zip Annas-Tools-Universal.apk
+      - uses: actions/upload-artifact@v4
+        with: { name: Annas-Tools-APK, path: out/Annas-Tools-APK.zip }
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          files: out/Annas-Tools-APK.zip
