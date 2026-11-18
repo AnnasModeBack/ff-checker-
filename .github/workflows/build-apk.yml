@@ -13,12 +13,25 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Normalize Project Directory Structure
+        run: |
+          if [ ! -f "settings.gradle" ]; then
+            FOUND_DIR=$(find . -maxdepth 3 -name "settings.gradle" -printf "%h\n" | head -n 1)
+            if [ -n "$FOUND_DIR" ] && [ "$FOUND_DIR" != "." ]; then
+              echo "Memindahkan isi $FOUND_DIR ke root repositori..."
+              cp -r "$FOUND_DIR"/. .
+            else
+              echo "ERROR: File settings.gradle tidak ditemukan di repositori! Pastikan seluruh file proyek sudah di-upload."
+              ls -la
+              exit 1
+            fi
+          fi
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle'
 
       - name: Generate Launcher Icons from assets/icon.jpg
         run: |
