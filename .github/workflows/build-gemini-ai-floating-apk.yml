@@ -51,7 +51,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /tmp/android-sdk
-          key: android-sdk-35-gemini-ai-floating-v7
+          key: android-sdk-35-gemini-ai-floating-v8
 
       - name: Install Android SDK Command-Line Tools
         if: steps.cache-android-sdk.outputs.cache-hit != 'true'
@@ -113,12 +113,12 @@ jobs:
           set -euo pipefail
           mkdir -p dist
           if [ -f "app/build/outputs/apk/debug/app-debug.apk" ]; then
-            cp "app/build/outputs/apk/debug/app-debug.apk" "dist/Gemini-AI-Floating-v7-Debug.apk"
+            cp "app/build/outputs/apk/debug/app-debug.apk" "dist/Gemini-AI-Floating-v8-Debug.apk"
           fi
           if [ -f "app/build/outputs/apk/release/app-release-unsigned.apk" ]; then
-            cp "app/build/outputs/apk/release/app-release-unsigned.apk" "dist/Gemini-AI-Floating-v7-Release-Unsigned.apk"
+            cp "app/build/outputs/apk/release/app-release-unsigned.apk" "dist/Gemini-AI-Floating-v8-Release-Unsigned.apk"
           elif [ -f "app/build/outputs/apk/release/app-release.apk" ]; then
-            cp "app/build/outputs/apk/release/app-release.apk" "dist/Gemini-AI-Floating-v7-Release.apk"
+            cp "app/build/outputs/apk/release/app-release.apk" "dist/Gemini-AI-Floating-v8-Release.apk"
           fi
           find app/build/outputs/apk -name "*.apk" -exec cp -n {} dist/ \; || true
           ls -lh dist/
