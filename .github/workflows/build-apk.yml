@@ -42,19 +42,13 @@ jobs:
           java-version: "17"
           distribution: "temurin"
 
-      - name: Setup Gradle 8.9
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "8.9"
-
       - name: Cache Android SDK
-        id: sdk-cache
         uses: actions/cache@v4
         with:
           path: /tmp/android-sdk
-          key: android-sdk-35-annas-ai-floating-v12
+          key: android-sdk-35-annas-v13
 
-      - name: Install Android SDK Command-Line Tools & Platform 35
+      - name: Install Android SDK Platform 35 & Build Tools
         run: |
           set -euo pipefail
           export ANDROID_SDK_ROOT=/tmp/android-sdk
@@ -74,18 +68,19 @@ jobs:
             "platforms;android-35" \
             "build-tools;35.0.0"
 
+      - name: Setup Gradle 8.9 (Without Wrapper Jar Dependency)
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+          cache-disabled: false
+
       - name: Build Debug & Release APKs
         env:
           ANDROID_SDK_ROOT: /tmp/android-sdk
           ANDROID_HOME: /tmp/android-sdk
         run: |
           set -euo pipefail
-          chmod +x ./gradlew 2>/dev/null || true
-          if [ -x "./gradlew" ] && [ -f "./gradle/wrapper/gradle-wrapper.jar" ]; then
-            ./gradlew assembleDebug assembleRelease --no-daemon --stacktrace
-          else
-            gradle assembleDebug assembleRelease --no-daemon --stacktrace
-          fi
+          gradle assembleDebug assembleRelease --no-daemon --stacktrace
 
       - name: Collect APKs
         run: |
@@ -93,8 +88,8 @@ jobs:
           rm -rf /tmp/apk_out && mkdir -p /tmp/apk_out
           DEBUG_APK=$(find app/build/outputs/apk/debug -name "*.apk" | head -n 1 || true)
           RELEASE_APK=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1 || true)
-          [ -n "$DEBUG_APK" ] && cp "$DEBUG_APK" /tmp/apk_out/Annas-AI-Floating-v12-Debug.apk
-          [ -n "$RELEASE_APK" ] && cp "$RELEASE_APK" /tmp/apk_out/Annas-AI-Floating-v12-Release.apk
+          [ -n "$DEBUG_APK" ] && cp "$DEBUG_APK" /tmp/apk_out/Annas-AI-Floating-v13-Debug.apk
+          [ -n "$RELEASE_APK" ] && cp "$RELEASE_APK" /tmp/apk_out/Annas-AI-Floating-v13-Release.apk
           ls -lh /tmp/apk_out
 
       - name: Upload APK Artifact
