@@ -1,4 +1,4 @@
-name: Build Universal APK v8.0
+name: Build Universal APK v10.0
 
 on:
   push:
@@ -10,27 +10,96 @@ on:
 jobs:
   build-android:
     runs-on: ubuntu-latest
+    env:
+      ANDROID_HOME: ${{ runner.temp }}/android-sdk
+      ANDROID_SDK_ROOT: ${{ runner.temp }}/android-sdk
+      JAVA_TOOL_OPTIONS: "-Xmx2048m -Dfile.encoding=UTF-8"
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK 17
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-      - uses: android-actions/setup-android@v3
-      - run: |
+
+      - name: Cache Android SDK
+        id: cache-android-sdk
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/android-sdk
+          key: android-sdk-35-cmd11076708-v1
+
+      - name: Install & Verify Android SDK Command-Line Tools
+        if: steps.cache-android-sdk.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          rm -rf "$ANDROID_HOME"
+          mkdir -p "$ANDROID_HOME/cmdline-tools"
+
+          ZIP_FILE="${{ runner.temp }}/commandlinetools-linux.zip"
+          URL="https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
+
+          for attempt in 1 2 3; do
+            echo "Mengunduh Android Command-Line Tools (Percobaan $attempt/3)..."
+            rm -f "$ZIP_FILE"
+            if curl -fL --retry 3 --retry-delay 5 --connect-timeout 30 --max-time 300 "$URL" -o "$ZIP_FILE"; then
+              if unzip -tq "$ZIP_FILE" >/dev/null 2>&1; then
+                echo "Verifikasi integritas ZIP berhasil."
+                break
+              else
+                echo "File ZIP korup, mengulang unduhan..."
+              fi
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "Gagal mengunduh file ZIP command-line tools yang valid setelah 3 percobaan."
+              exit 1
+            fi
+            sleep 5
+          done
+
+          rm -rf "${{ runner.temp }}/cmdtools_extract"
+          mkdir -p "${{ runner.temp }}/cmdtools_extract"
+          unzip -oq "$ZIP_FILE" -d "${{ runner.temp }}/cmdtools_extract"
+          mv "${{ runner.temp }}/cmdtools_extract/cmdline-tools" "$ANDROID_HOME/cmdline-tools/latest"
+          rm -rf "${{ runner.temp }}/cmdtools_extract" "$ZIP_FILE"
+
+      - name: Install Android Platform & Build-Tools 35
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          chmod +x "$SDKMANAGER"
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
+          yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses >/dev/null 2>&1 || true
+          "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --install "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Generate Launcher Icons
+        run: |
           chmod +x scripts/make-icons.sh
-          ./scripts/make-icons.sh || true
-      - run: |
-          if [ -f "./gradlew" ]; then
-            chmod +x ./gradlew
-            ./gradlew assembleDebug assembleRelease --stacktrace
-          else
-            gradle assembleDebug assembleRelease --stacktrace
+          ./scripts/make-icons.sh
+
+      - name: Setup Gradle Wrapper & Build Universal APK
+        run: |
+          set -euo pipefail
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
+          if [ ! -f "./gradlew" ]; then
+            gradle wrapper --gradle-version 8.7 --distribution-type all
           fi
-      - run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebug assembleRelease --no-daemon --stacktrace
+
+      - name: Collect Built APKs
+        run: |
+          set -euo pipefail
           mkdir -p dist
           find app/build/outputs/apk -name "*.apk" -exec cp {} dist/ \;
-      - uses: actions/upload-artifact@v4
+          ls -lh dist/
+
+      - name: Upload APK Artifacts
+        uses: actions/upload-artifact@v4
         with:
-          name: AnnasTools-FloatingAI-v8.0-Universal
-          path: dist/*
+          name: AnnasTools-FloatingAI-v10.0-APK
+          path: dist/*.apk
+          if-no-files-found: error
