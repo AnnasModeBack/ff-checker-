@@ -1,4 +1,4 @@
-name: Build Universal APK v13.0 (0s Instant)
+name: Build Universal APK v14.0 (0s Instant)
 
 on:
   push:
@@ -52,7 +52,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /tmp/android-sdk
-          key: android-sdk-35-cmd11076708-v4
+          key: android-sdk-35-cmd11076708-v5
 
       - name: Install & Verify Android SDK Command-Line Tools
         if: steps.cache-android-sdk.outputs.cache-hit != 'true'
@@ -65,6 +65,7 @@ jobs:
           URL="https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
 
           for attempt in 1 2 3; do
+            echo "Mengunduh Android Command-Line Tools (Percobaan $attempt/3)..."
             rm -f "$ZIP_FILE"
             if curl -fL --retry 3 --retry-delay 5 --connect-timeout 30 --max-time 300 "$URL" -o "$ZIP_FILE"; then
               if unzip -tq "$ZIP_FILE" >/dev/null 2>&1; then
@@ -95,12 +96,7 @@ jobs:
       - name: Generate Launcher Icons
         run: |
           set -euo pipefail
-          mkdir -p scripts
-          if [ ! -f "scripts/make-icons.sh" ]; then
-            cat << 'EOF' > scripts/make-icons.sh
-#!/usr/bin/env bash
-set -e
-python3 - << 'PY'
+          python3 -c '
 import os
 from PIL import Image
 src = "app/src/main/assets/icon.jpg"
@@ -114,11 +110,7 @@ if os.path.exists(src):
         resized = im.resize((px, px), Image.Resampling.LANCZOS)
         resized.save(os.path.join(out_dir, "ic_launcher.png"), "PNG")
         resized.save(os.path.join(out_dir, "ic_launcher_round.png"), "PNG")
-PY
-EOF
-          fi
-          chmod +x scripts/make-icons.sh
-          ./scripts/make-icons.sh
+'
 
       - name: Setup Gradle Wrapper & Build Universal APK
         run: |
@@ -140,6 +132,6 @@ EOF
       - name: Upload APK Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: AnnasTools-FloatingAI-v13.0-0s-APK
+          name: AnnasTools-FloatingAI-v14.0-0s-APK
           path: dist/*.apk
           if-no-files-found: error
