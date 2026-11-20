@@ -1,4 +1,4 @@
-name: Build Universal APK v15.1 (0s Instant)
+name: Build Universal APK v15.2 (0s Instant)
 
 on:
   push:
@@ -51,7 +51,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /tmp/android-sdk
-          key: android-sdk-35-cmd11076708-v7
+          key: android-sdk-35-cmd11076708-v8
 
       - name: Install Android SDK Command-Line Tools
         if: steps.cache-android-sdk.outputs.cache-hit != 'true'
@@ -114,6 +114,6 @@ jobs:
       - name: Upload APK Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: AnnasTools-FloatingAI-v15.1-0s-APK
+          name: AnnasTools-FloatingAI-v15.2-0s-APK
           path: dist/*.apk
           if-no-files-found: error
