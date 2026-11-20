@@ -1,4 +1,4 @@
-name: Build Universal APK v14.0 (0s Instant)
+name: Build Universal APK v15.0 (0s Instant)
 
 on:
   push:
@@ -25,7 +25,6 @@ jobs:
           if [ ! -f "app/build.gradle" ]; then
             ZIP_FOUND=$(ls -t *.zip 2>/dev/null | head -n 1 || true)
             if [ -n "$ZIP_FOUND" ] && unzip -tq "$ZIP_FOUND" >/dev/null 2>&1; then
-              echo "Mengekstrak $ZIP_FOUND..."
               unzip -oq "$ZIP_FOUND" -d /tmp/repo_zip_extract
               if [ -f "/tmp/repo_zip_extract/app/build.gradle" ]; then
                 cp -rn /tmp/repo_zip_extract/* . 2>/dev/null || true
@@ -52,20 +51,17 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /tmp/android-sdk
-          key: android-sdk-35-cmd11076708-v5
+          key: android-sdk-35-cmd11076708-v6
 
-      - name: Install & Verify Android SDK Command-Line Tools
+      - name: Install Android SDK Command-Line Tools
         if: steps.cache-android-sdk.outputs.cache-hit != 'true'
         run: |
           set -euo pipefail
           rm -rf "$ANDROID_HOME"
           mkdir -p "$ANDROID_HOME/cmdline-tools"
-
           ZIP_FILE="/tmp/commandlinetools-linux.zip"
           URL="https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
-
           for attempt in 1 2 3; do
-            echo "Mengunduh Android Command-Line Tools (Percobaan $attempt/3)..."
             rm -f "$ZIP_FILE"
             if curl -fL --retry 3 --retry-delay 5 --connect-timeout 30 --max-time 300 "$URL" -o "$ZIP_FILE"; then
               if unzip -tq "$ZIP_FILE" >/dev/null 2>&1; then
@@ -77,7 +73,6 @@ jobs:
             fi
             sleep 5
           done
-
           rm -rf /tmp/cmdtools_extract
           mkdir -p /tmp/cmdtools_extract
           unzip -oq "$ZIP_FILE" -d /tmp/cmdtools_extract
@@ -96,21 +91,10 @@ jobs:
       - name: Generate Launcher Icons
         run: |
           set -euo pipefail
-          python3 -c '
-import os
-from PIL import Image
-src = "app/src/main/assets/icon.jpg"
-res = "app/src/main/res"
-sizes = {"mipmap-mdpi": 48, "mipmap-hdpi": 72, "mipmap-xhdpi": 96, "mipmap-xxhdpi": 144, "mipmap-xxxhdpi": 192}
-if os.path.exists(src):
-    im = Image.open(src).convert("RGBA")
-    for folder, px in sizes.items():
-        out_dir = os.path.join(res, folder)
-        os.makedirs(out_dir, exist_ok=True)
-        resized = im.resize((px, px), Image.Resampling.LANCZOS)
-        resized.save(os.path.join(out_dir, "ic_launcher.png"), "PNG")
-        resized.save(os.path.join(out_dir, "ic_launcher_round.png"), "PNG")
-'
+          if [ -f "scripts/make-icons.sh" ]; then
+            chmod +x scripts/make-icons.sh
+            ./scripts/make-icons.sh
+          fi
 
       - name: Setup Gradle Wrapper & Build Universal APK
         run: |
@@ -132,6 +116,6 @@ if os.path.exists(src):
       - name: Upload APK Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: AnnasTools-FloatingAI-v14.0-0s-APK
+          name: AnnasTools-FloatingAI-v15.0-0s-APK
           path: dist/*.apk
           if-no-files-found: error
