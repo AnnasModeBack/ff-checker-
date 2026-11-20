@@ -51,7 +51,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /tmp/android-sdk
-          key: android-sdk-35-ai-floating-v2
+          key: android-sdk-35-ai-floating-web-v8
 
       - name: Install Android SDK Command-Line Tools
         if: steps.cache-android-sdk.outputs.cache-hit != 'true'
@@ -88,11 +88,6 @@ jobs:
           export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
           yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses >/dev/null 2>&1 || true
           "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --install "platform-tools" "platforms;android-35" "build-tools;35.0.0"
-
-      - name: Verify Launcher Icons
-        run: |
-          set -euo pipefail
-          ls -la app/src/main/res/mipmap-*/ic_launcher* 2>/dev/null || true
 
       - name: Setup Gradle Wrapper & Build Universal APK
         run: |
