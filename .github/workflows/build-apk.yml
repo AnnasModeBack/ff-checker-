@@ -1,118 +1,61 @@
-name: Build AI Floating APK
+
+name: Build AI Floating Gemini Ultra APK
 
 on:
   push:
-    branches: [ "**" ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ "**" ]
+    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
-  build-android:
+  build:
+    name: Compile Android APK (Universal)
     runs-on: ubuntu-latest
-    env:
-      ANDROID_HOME: /tmp/android-sdk
-      ANDROID_SDK_ROOT: /tmp/android-sdk
-      JAVA_TOOL_OPTIONS: "-Xmx2560m -Dfile.encoding=UTF-8"
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Auto-Extract Project ZIP if Present at Root
-        run: |
-          set -euo pipefail
-          if [ ! -f "app/build.gradle" ] && [ ! -f "app/build.gradle.kts" ]; then
-            ZIP_FOUND=$(ls -t *.zip 2>/dev/null | head -n 1 || true)
-            if [ -n "$ZIP_FOUND" ] && unzip -tq "$ZIP_FOUND" >/dev/null 2>&1; then
-              unzip -oq "$ZIP_FOUND" -d /tmp/repo_zip_extract
-              if [ -f "/tmp/repo_zip_extract/app/build.gradle" ] || [ -f "/tmp/repo_zip_extract/app/build.gradle.kts" ]; then
-                cp -rn /tmp/repo_zip_extract/* . 2>/dev/null || true
-                cp -rn /tmp/repo_zip_extract/.gitignore . 2>/dev/null || true
-              else
-                SUB_DIR=$(find /tmp/repo_zip_extract -maxdepth 2 \( -name "build.gradle" -o -name "build.gradle.kts" \) -printf "%h\n" | head -n 1 || true)
-                if [ -n "$SUB_DIR" ]; then
-                  cp -rn "$SUB_DIR"/* . 2>/dev/null || true
-                  cp -rn "$SUB_DIR"/.gitignore . 2>/dev/null || true
-                fi
-              fi
-              rm -rf /tmp/repo_zip_extract
-            fi
-          fi
-
-      - name: Setup Java JDK 17
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Cache Android SDK
-        id: cache-android-sdk
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Cache Gradle Packages
         uses: actions/cache@v4
         with:
-          path: /tmp/android-sdk
-          key: android-sdk-35-ai-floating-vbar-v14
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
-      - name: Install Android SDK Command-Line Tools
-        if: steps.cache-android-sdk.outputs.cache-hit != 'true'
+      - name: Generate Gradle Wrapper if Missing
         run: |
-          set -euo pipefail
-          rm -rf "$ANDROID_HOME"
-          mkdir -p "$ANDROID_HOME/cmdline-tools"
-          ZIP_FILE="/tmp/commandlinetools-linux.zip"
-          URL="https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
-          for attempt in 1 2 3; do
-            echo "Mengunduh Android Command-Line Tools (Percobaan $attempt/3)..."
-            rm -f "$ZIP_FILE"
-            if curl -fL --retry 3 --retry-delay 5 --connect-timeout 30 --max-time 300 "$URL" -o "$ZIP_FILE"; then
-              if unzip -tq "$ZIP_FILE" >/dev/null 2>&1; then
-                break
-              fi
-            fi
-            if [ "$attempt" -eq 3 ]; then
-              exit 1
-            fi
-            sleep 5
-          done
-          rm -rf /tmp/cmdtools_extract
-          mkdir -p /tmp/cmdtools_extract
-          unzip -oq "$ZIP_FILE" -d /tmp/cmdtools_extract
-          mv /tmp/cmdtools_extract/cmdline-tools "$ANDROID_HOME/cmdline-tools/latest"
-          rm -rf /tmp/cmdtools_extract "$ZIP_FILE"
-
-      - name: Install Android Platform & Build-Tools 35
-        run: |
-          set -euo pipefail
-          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          chmod +x "$SDKMANAGER"
-          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
-          yes | "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --licenses >/dev/null 2>&1 || true
-          "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --install "platform-tools" "platforms;android-35" "build-tools;35.0.0"
-
-      - name: Setup Gradle Wrapper & Build Universal APK
-        run: |
-          set -euo pipefail
-          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
-          if [ ! -f "./gradlew" ]; then
-            gradle wrapper --gradle-version 8.9 --distribution-type all
+          if [ ! -f ./gradlew ]; then
+            gradle wrapper --gradle-version 8.7
           fi
-          if [ -f "./gradlew" ]; then
-            sed -i 's/\r$//' gradlew
-            sed -i 's/DEFAULT_JVM_OPTS=.*$/DEFAULT_JVM_OPTS="-Xmx2048m -Dfile.encoding=UTF-8"/' gradlew
-            chmod +x ./gradlew
-          fi
-          ./gradlew assembleDebug assembleRelease --no-daemon --stacktrace
+          chmod +x ./gradlew
 
-      - name: Collect Built APKs
-        run: |
-          set -euo pipefail
-          mkdir -p dist
-          find app/build/outputs/apk -name "*.apk" -exec cp {} dist/ \;
-          ls -lh dist/
+      - name: Build Debug & Release Unsigned APK
+        run: ./gradlew assembleDebug assembleRelease --stacktrace
 
-      - name: Upload APK Artifacts
+      - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AI-Floating-APK
-          path: dist/*.apk
+          name: AI-Floating-Gemini-Ultra-Debug-APK
+          path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+      - name: Upload Release APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AI-Floating-Gemini-Ultra-Release-APK
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: warn
