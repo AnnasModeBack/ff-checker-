@@ -51,7 +51,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /tmp/android-sdk
-          key: android-sdk-35-ai-floating-vbar-v13
+          key: android-sdk-35-ai-floating-vbar-v14
 
       - name: Install Android SDK Command-Line Tools
         if: steps.cache-android-sdk.outputs.cache-hit != 'true'
