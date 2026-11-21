@@ -1,4 +1,4 @@
-name: Build Annas AI 3D Java APK v8
+name: Build Annas AI 3D Java APK v9
 
 on:
   push:
@@ -39,7 +39,7 @@ jobs:
               exit 1
             fi
           fi
-          echo "=== Root directory contents before Gradle build ==="
+          echo "=== Verified Gradle Root Files ==="
           ls -la
 
       - name: Set up JDK 17
@@ -52,16 +52,34 @@ jobs:
         uses: gradle/actions/setup-gradle@v5
         with:
           gradle-version: '8.5'
-          cache-disabled: true
+          cache-disabled: false
 
       - name: Build Debug APK
         run: gradle assembleDebug --no-daemon --stacktrace
 
-      - name: Check APK Size
-        run: ls -lh app/build/outputs/apk/debug/*.apk
+      - name: Check APK Size & Write Job Summary
+        run: |
+          set -euo pipefail
+          APK_FILES=$(ls -lh app/build/outputs/apk/debug/*.apk)
+          echo "$APK_FILES"
+          {
+            echo "### Annas AI 3D Java v9 — Build Summary (Anti-Merah)"
+            echo ""
+            echo "| Detail | Value |"
+            echo "| :--- | :--- |"
+            echo "| Status | **SUCCESS (Hijau)** |"
+            echo "| Workflow | Build Annas AI 3D Java APK v9 |"
+            echo "| Java / Gradle | JDK 17 (Temurin) / Gradle 8.5 |"
+            echo "| Artifact Name | \`Annas-AI-3D-Java-v9\` |"
+            echo ""
+            echo "**Generated APK(s):**"
+            echo '```'
+            echo "$APK_FILES"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Annas-AI-3D-Java-v8
+          name: Annas-AI-3D-Java-v9
           path: app/build/outputs/apk/debug/*.apk
