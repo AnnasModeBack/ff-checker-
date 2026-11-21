@@ -1,4 +1,5 @@
-name: Build Annas AI 3D Pro APK
+
+name: Build Annas AI 3D Java APK
 
 on:
   push:
@@ -21,15 +22,23 @@ jobs:
           set -euo pipefail
           ZIP_FOUND=$(ls -t *.zip 2>/dev/null | head -n 1 || true)
           if [ -n "$ZIP_FOUND" ] && unzip -tq "$ZIP_FOUND" >/dev/null 2>&1; then
-            echo "Extracting and overwriting project files from $ZIP_FOUND..."
+            echo "Extracting project files from $ZIP_FOUND while preserving ZIP..."
             rm -rf /tmp/repo_zip_extract && mkdir -p /tmp/repo_zip_extract
             unzip -oq "$ZIP_FOUND" -d /tmp/repo_zip_extract
-            if [ -f "/tmp/repo_zip_extract/app/build.gradle.kts" ]; then
-              cp -rf /tmp/repo_zip_extract/* . 2>/dev/null || true
+            if [ -f "/tmp/repo_zip_extract/app/build.gradle" ]; then
+              cp -rf /tmp/repo_zip_extract/app . 2>/dev/null || true
+              cp -rf /tmp/repo_zip_extract/build.gradle . 2>/dev/null || true
+              cp -rf /tmp/repo_zip_extract/settings.gradle . 2>/dev/null || true
+              cp -rf /tmp/repo_zip_extract/gradle.properties . 2>/dev/null || true
+              cp -f /tmp/repo_zip_extract/README.md . 2>/dev/null || true
             else
               SUBDIR=$(find /tmp/repo_zip_extract -mindepth 1 -maxdepth 1 -type d | head -n 1 || true)
-              if [ -n "$SUBDIR" ] && [ -f "$SUBDIR/app/build.gradle.kts" ]; then
-                cp -rf "$SUBDIR"/* . 2>/dev/null || true
+              if [ -n "$SUBDIR" ] && [ -f "$SUBDIR/app/build.gradle" ]; then
+                cp -rf "$SUBDIR"/app . 2>/dev/null || true
+                cp -rf "$SUBDIR"/build.gradle . 2>/dev/null || true
+                cp -rf "$SUBDIR"/settings.gradle . 2>/dev/null || true
+                cp -rf "$SUBDIR"/gradle.properties . 2>/dev/null || true
+                cp -f "$SUBDIR"/README.md . 2>/dev/null || true
               fi
             fi
             ls -lh "$ZIP_FOUND"
@@ -41,7 +50,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Gradle (Cache Disabled for Reliability)
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.5'
@@ -50,8 +59,11 @@ jobs:
       - name: Build Debug APK
         run: gradle assembleDebug --no-daemon --stacktrace
 
+      - name: Check APK Size
+        run: ls -lh app/build/outputs/apk/debug/*.apk
+
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Annas-AI-3D-HD-v4
+          name: Annas-AI-3D-Java-v5
           path: app/build/outputs/apk/debug/*.apk
