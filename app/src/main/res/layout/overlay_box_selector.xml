@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:id="@+id/boxFrame"
+        android:layout_width="260dp"
+        android:layout_height="150dp"
+        android:background="@drawable/bg_box_frame"
+        android:orientation="vertical"
+        android:padding="8dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:contentDescription="Scan SVG"
+                android:src="@drawable/ic_svg_box_scan" />
+
+            <TextView
+                android:id="@+id/tvBoxDragHandle"
+                style="@style/UltraDisplayTitle"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:background="#CC050814"
+                android:gravity="center_vertical|start"
+                android:paddingStart="8dp"
+                android:text="ARAHKAN KOTAK"
+                android:textColor="@color/neon_cyan"
+                android:textSize="11sp" />
+
+            <ImageButton
+                android:id="@+id/btnConfirmCheckAI"
+                android:layout_width="44dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="5dp"
+                android:background="@drawable/bg_check_emerald"
+                android:contentDescription="Centang ke Google AI"
+                android:padding="6dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_svg_check" />
+
+            <ImageButton
+                android:id="@+id/btnCloseBox"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="4dp"
+                android:backgroundTint="#DC2626"
+                android:contentDescription="Tutup Kotak"
+                android:padding="7dp"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_svg_close" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvBoxHint"
+            style="@style/UltraReadableBody"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="Geser kotak ke area soal/teks,
+lalu tekan tombol centang SVG"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="30dp"
+            android:gravity="end|center_vertical"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnResizeBox"
+                style="@style/UltraSectionLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:backgroundTint="#1E293B"
+                android:drawableEnd="@drawable/ic_svg_resize"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="0dp"
+                android:text="UKURAN "
+                android:textColor="@color/neon_cyan"
+                android:textSize="10sp" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

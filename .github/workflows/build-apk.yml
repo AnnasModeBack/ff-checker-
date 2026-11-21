@@ -1,0 +1,95 @@
+name: Build Annas AI 3D Java APK v12
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Auto-Extract Latest Project ZIP if Present at Root
+        run: |
+          set -euo pipefail
+          ZIP_FOUND=$(ls -t *.zip 2>/dev/null | head -n 1 || true)
+          if [ -n "$ZIP_FOUND" ] && unzip -tq "$ZIP_FOUND" >/dev/null 2>&1; then
+            echo "Extracting project files from $ZIP_FOUND..."
+            rm -rf /tmp/repo_zip_extract app build.gradle settings.gradle gradle.properties README.md
+            mkdir -p /tmp/repo_zip_extract
+            unzip -oq "$ZIP_FOUND" -d /tmp/repo_zip_extract
+            APP_GRADLE=$(find /tmp/repo_zip_extract -name "build.gradle" -path "*/app/build.gradle" | head -n 1 || true)
+            if [ -n "$APP_GRADLE" ]; then
+              PROJ_ROOT=$(dirname "$(dirname "$APP_GRADLE")")
+              cp -rf "$PROJ_ROOT"/app .
+              cp -f "$PROJ_ROOT"/build.gradle . 2>/dev/null || true
+              cp -f "$PROJ_ROOT"/settings.gradle . 2>/dev/null || true
+              cp -f "$PROJ_ROOT"/gradle.properties . 2>/dev/null || true
+              cp -f "$PROJ_ROOT"/README.md . 2>/dev/null || true
+            else
+              echo "ERROR: app/build.gradle not found inside $ZIP_FOUND"
+              exit 1
+            fi
+          fi
+          ls -la
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: '8.2.1'
+          cache-disabled: false
+
+      - name: Build Debug APK
+        run: |
+          set -o pipefail
+          gradle assembleDebug --no-daemon --stacktrace 2>&1 | tee gradle_build.log
+
+      - name: Write Failure Log to Summary
+        if: failure()
+        run: |
+          {
+            echo "### Build Error Log (Last 80 lines)"
+            echo '```'
+            tail -n 80 gradle_build.log || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check APK Size & Write Job Summary
+        run: |
+          set -euo pipefail
+          APK_FILES=$(ls -lh app/build/outputs/apk/debug/*.apk)
+          echo "$APK_FILES"
+          {
+            echo "### Annas AI 3D Java v12 — Build Summary (100% Hijau)"
+            echo ""
+            echo "| Detail | Value |"
+            echo "| :--- | :--- |"
+            echo "| Status | **SUCCESS (Hijau)** |"
+            echo "| Workflow | Build Annas AI 3D Java APK v12 |"
+            echo "| Java / Gradle / AGP | JDK 17 / Gradle 8.2.1 / AGP 8.1.4 |"
+            echo "| Artifact Name | \`Annas-AI-3D-Java-v12\` |"
+            echo ""
+            echo "**Generated APK(s):**"
+            echo '```'
+            echo "$APK_FILES"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Annas-AI-3D-Java-v12
+          path: app/build/outputs/apk/debug/*.apk

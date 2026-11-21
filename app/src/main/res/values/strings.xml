@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Annas AI 3D v12</string>
+    <string name="notif_channel_name">Annas AI 3D Notifikasi</string>
+    <string name="notif_title">Annas AI 3D Ultra v12 Aktif</string>
+    <string name="notif_text">Ketuk bubble 3D atau arahkan kotak centang SVG ke Google AI</string>
+</resources>
