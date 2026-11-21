@@ -1,4 +1,4 @@
-name: Build Annas AI 3D Java APK v10
+name: Build Annas AI 3D Java APK v12
 
 on:
   push:
@@ -22,7 +22,8 @@ jobs:
           ZIP_FOUND=$(ls -t *.zip 2>/dev/null | head -n 1 || true)
           if [ -n "$ZIP_FOUND" ] && unzip -tq "$ZIP_FOUND" >/dev/null 2>&1; then
             echo "Extracting project files from $ZIP_FOUND..."
-            rm -rf /tmp/repo_zip_extract && mkdir -p /tmp/repo_zip_extract
+            rm -rf /tmp/repo_zip_extract app build.gradle settings.gradle gradle.properties README.md
+            mkdir -p /tmp/repo_zip_extract
             unzip -oq "$ZIP_FOUND" -d /tmp/repo_zip_extract
             APP_GRADLE=$(find /tmp/repo_zip_extract -name "build.gradle" -path "*/app/build.gradle" | head -n 1 || true)
             if [ -n "$APP_GRADLE" ]; then
@@ -72,14 +73,14 @@ jobs:
           APK_FILES=$(ls -lh app/build/outputs/apk/debug/*.apk)
           echo "$APK_FILES"
           {
-            echo "### Annas AI 3D Java v10 — Build Summary (100% Hijau)"
+            echo "### Annas AI 3D Java v12 — Build Summary (100% Hijau)"
             echo ""
             echo "| Detail | Value |"
             echo "| :--- | :--- |"
             echo "| Status | **SUCCESS (Hijau)** |"
-            echo "| Workflow | Build Annas AI 3D Java APK v10 |"
+            echo "| Workflow | Build Annas AI 3D Java APK v12 |"
             echo "| Java / Gradle / AGP | JDK 17 / Gradle 8.2.1 / AGP 8.1.4 |"
-            echo "| Artifact Name | \`Annas-AI-3D-Java-v10\` |"
+            echo "| Artifact Name | \`Annas-AI-3D-Java-v12\` |"
             echo ""
             echo "**Generated APK(s):**"
             echo '```'
@@ -90,5 +91,5 @@ jobs:
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Annas-AI-3D-Java-v10
+          name: Annas-AI-3D-Java-v12
           path: app/build/outputs/apk/debug/*.apk
