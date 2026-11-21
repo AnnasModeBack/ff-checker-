@@ -1,4 +1,4 @@
-name: Build Annas AI 3D Java APK v6
+name: Build Annas AI 3D Java APK v7
 
 on:
   push:
@@ -64,5 +64,5 @@ jobs:
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Annas-AI-3D-Java-v6
+          name: Annas-AI-3D-Java-v7
           path: app/build/outputs/apk/debug/*.apk
